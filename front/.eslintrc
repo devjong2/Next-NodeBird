@@ -4,7 +4,7 @@
     "ecmaVersion": 2020,
     "sourceType": "module",
     "ecmaFeatures": {
-        "jsx": true
+      "jsx": true
     }
   },
   "env": {
@@ -29,6 +29,7 @@
     "react/jsx-filename-extension": "off",
     "react/jsx-one-expression-per-line": "off",
     "object-curly-newline": "off",
-    "linebreak-style": "off"
+    "linebreak-style": "off",
+    "no-param-reassign": "off"
   }
 }
