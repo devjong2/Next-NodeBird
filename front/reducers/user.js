@@ -1,8 +1,10 @@
-import { object } from "prop-types";
-
 import produce from 'immer';
 
 export const initialState = {
+	loadMyInfoLodding: false,
+	loadMyInfoDone: false,
+	loadMyInfoError: null,
+
 	logInLodding: false,
 	logInDone: false,
 	logInError: null,
@@ -31,6 +33,10 @@ export const initialState = {
 	signUpData: {},
 	loginData: {},
 };
+
+export const LOAD_MY_INFO_REQUEST = 'LOAD_MY_INFO_REQUEST';
+export const LOAD_MY_INFO_SUCCESS = 'LOAD_MY_INFO_SUCCESS';
+export const LOAD_MY_INFO_FAILURE = 'LOAD_MY_INFO_FAILURE';
 
 export const LOG_IN_REQUEST = 'LOG_IN_REQUEST';
 export const LOG_IN_SUCCESS = 'LOG_IN_SUCCESS';
@@ -84,6 +90,20 @@ export const logoutRequestAction = () => {
 const reducer = (state = initialState, action) => {
 	return produce(state, (draft) => {
 		switch (action.type) {
+			case LOAD_MY_INFO_REQUEST:
+				draft.loadMyInfoLodding = true;
+				draft.loadMyInfoError = null;
+				draft.loadMyInfoDone = false;
+				break;
+			case LOAD_MY_INFO_SUCCESS:
+				draft.loadMyInfoLodding = false;
+				draft.loadMyInfoDone = true;
+				draft.me = action.data;
+				break;
+			case LOAD_MY_INFO_FAILURE:
+				draft.loadMyInfoLodding = false;
+				draft.loadMyInfoError = action.error;
+				break;
 			case LOG_IN_REQUEST:
 				draft.logInLodding = true;
 				draft.logInError = null;
@@ -92,7 +112,7 @@ const reducer = (state = initialState, action) => {
 			case LOG_IN_SUCCESS:
 				draft.logInLodding = false;
 				draft.logInDone = true;
-				draft.me = dummyUser(action.data);
+				draft.me = action.data;
 				break;
 			case LOG_IN_FAILURE:
 				draft.logInLodding = false;

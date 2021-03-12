@@ -1,6 +1,15 @@
 const express = require('express');
+const cors = require('cors');
+const session = require('express-session');
+const cookieParser = require('cookie-parser');
 const postRouter = require('./routes/post');
+const userRouter = require('./routes/user');
 const db = require('./models');
+const passportConfig = require('./passport');
+const passport = require('passport');
+const dotenv = require('dotenv');
+
+dotenv.config();
 const app = express();
 
 db.sequelize.sync()
@@ -9,19 +18,25 @@ db.sequelize.sync()
 	})
 	.catch(console.error);
 
-app.get('/', (req, res) => {
-	res.send('hello express');
-});
+passportConfig();
 
-app.get('/', (req, res) => {
-	res.send('hello api');
-}); 
-
-app.get('/posts', (req, res) => {
-	res.send('hello posts');
-});
+app.use(cors({
+	origin: 'http://localhost:3060',
+	credentials: true,
+}));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser(process.env.COOKIE_SECRET));
+app.use(session());
+app.use(passport.initialize());
+app.use(passport.session({
+	saveUninitialized: false,
+	resave: false,
+	secret: process.env.COOKIE_SECRET,
+}));
 
 app.use('/post', postRouter);
+app.use('/user', userRouter);
 
 app.listen(3065, () => {
 	console.log('서버 실행 중');
