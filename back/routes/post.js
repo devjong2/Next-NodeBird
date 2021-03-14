@@ -1,17 +1,50 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const { Post, Comment, Image, User } = require('../models');
 const { isLoggedIn } = require('./middlewares');
 
 const router = express.Router();
 
-router.post('/', isLoggedIn, async (req, res, next) => {
-	const content = req.body.content;
+try {
+	fs.accessSync('uploads');
+} catch (error) {
+	console.log('uploads 폴더가 없으므로 생성');
+	fs.mkdirSync('uploads');
+}
+
+const upload = multer({
+	storage: multer.diskStorage({
+		destination(req, file, done) {
+			done(null, 'uploads');
+		},
+		filename(req, file, done) {
+			const ext = path.extname(file.originalname);
+			const basename = path.basename(file.originalname, ext);
+			done(null, basename + '_' + new Date().getTime() + ext);
+		}
+	}),
+	limits: { fileSize: 20 * 1024 * 1024 },
+});
+
+router.post('/', isLoggedIn, upload.none(), async (req, res, next) => {
+	const { content, image } = req.body;
 	try {
 		const post = await Post.create({
 			content,
 			UserId: req.user.id,
 		});
+		if (image) {
+			if (Array.isArray(image)) {
+				const images = await Promise.all(image.map((v) => Image.create({ src: v })));
+				await post.addImages(images);
+			} else {
+				const oneImage = await Image.create({ src: image });
+				await post.addImages(oneImage);
+			}
+		}
 		const fullPost = await Post.findOne({
 			where: { id: post.id },
 			include: [{
@@ -36,6 +69,11 @@ router.post('/', isLoggedIn, async (req, res, next) => {
 		console.error(error);
 		next(error);
 	}
+});
+
+router.post('/images', isLoggedIn, upload.array('image'), (req, res, next) => {
+	console.log(req.files);
+	res.json(req.files.map((v) => v.filename));
 });
 
 router.post('/:postId/comment', isLoggedIn, async (req, res, next) => {
