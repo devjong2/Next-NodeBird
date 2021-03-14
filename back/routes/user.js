@@ -106,4 +106,53 @@ router.post('/logout', isLoggedIn, (req, res) => {
 	res.send('ok');
 });
 
+router.patch('/nickname', isLoggedIn, async (req, res, next) => {
+	const nickname = req.body.nickname
+	try {
+		await User.update(
+			{
+				nickname,
+			}, {
+				where: {
+					id: req.user.id,
+				}
+			}
+		);
+		res.status(200).json({ nickname });
+	} catch (error) {
+		console.error(error);
+		next(error);
+	}
+});
+
+router.patch('/:userId/follow', isLoggedIn, async (req, res, next) => {
+	const userId = req.body.userId;
+	try {
+		const user = await User.findOne({ where: { id: userId } });
+		if (!user) {
+			res.status(403).send('회원이 아닙니다.');
+		}
+		await user.addFollowers(userId);
+		res.status(200).json({ UserId: userId });
+	} catch (error) {
+		console.error(error);
+		next(error);
+	}
+});
+
+router.delete('/:userId/follow', isLoggedIn, async (req, res, next) => {
+	const userId = req.body.userId;
+	try {
+		const user = await User.findOne({ where: { id: userId } });
+		if (!user) {
+			res.status(403).send('회원이 아닙니다.');
+		}
+		await user.removeFollowers(userId);
+		res.status(200).json({ UserId: userId });
+	} catch (error) {
+		console.error(error);
+		next(error);
+	}
+});
+
 module.exports = router;
