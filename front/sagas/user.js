@@ -1,4 +1,4 @@
-import { all, takeLatest, delay, put, fork, call } from 'redux-saga/effects';
+import { all, takeLatest, put, fork, call } from 'redux-saga/effects';
 import axios from 'axios';
 import {
 	LOG_IN_REQUEST, LOG_IN_SUCCESS, LOG_IN_FAILURE,
@@ -11,6 +11,7 @@ import {
 	LOAD_FOLLOWERS_REQUEST, LOAD_FOLLOWERS_SUCCESS, LOAD_FOLLOWERS_FAILURE,
 	LOAD_FOLLOWINGS_REQUEST, LOAD_FOLLOWINGS_SUCCESS, LOAD_FOLLOWINGS_FAILURE,
 	REMOVE_FOLLOWER_REQUEST, REMOVE_FOLLOWER_SUCCESS, REMOVE_FOLLOWER_FAILURE,
+	LOAD_USER_REQUEST, LOAD_USER_SUCCESS, LOAD_USER_FAILURE,
 } from '../reducers/user';
 
 function removeFollowerAPI(data) {
@@ -93,9 +94,9 @@ function loadMyInfoAPI() {
 	return axios.get('/user');
 };
 
-function* loadMyInfo(action) {
+function* loadMyInfo() {
 	try {
-		const result = yield call(loadMyInfoAPI, action.data);
+		const result = yield call(loadMyInfoAPI);
 		yield put({
 			type: LOAD_MY_INFO_SUCCESS,
 			data: result.data,
@@ -103,6 +104,25 @@ function* loadMyInfo(action) {
 	} catch (err) {
 		yield put({
 			type: LOAD_MY_INFO_FAILURE,
+			error: err.response.data,
+		});
+	}
+};
+
+function loadUserAPI(data) {
+	return axios.get(`/user/${data}`);
+};
+
+function* loadUser(action) {
+	try {
+		const result = yield call(loadUserAPI, action.data);
+		yield put({
+			type: LOAD_USER_SUCCESS,
+			data: result.data,
+		});
+	} catch (err) {
+		yield put({
+			type: LOAD_USER_FAILURE,
 			error: err.response.data,
 		});
 	}
@@ -223,6 +243,10 @@ function* watchLoadMyInfo() {
 	yield takeLatest(LOAD_MY_INFO_REQUEST, loadMyInfo);
 };
 
+function* watchLoadUser() {
+	yield takeLatest(LOAD_USER_REQUEST, loadUser);
+};
+
 function* watchLogIn() {
 	yield takeLatest(LOG_IN_REQUEST, logIn);
 };
@@ -245,6 +269,7 @@ function* watchUnFollow() {
 
 export default function* userSaga() {
 	yield all([
+		fork(watchLoadUser),
 		fork(watchRemoveFollower),
 		fork(watchLoadFollowings),
 		fork(watchLoadFollowers),
